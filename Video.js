@@ -253,6 +253,12 @@ export default class Video extends Component {
     const isNetwork = !!(uri && uri.match(/^https?:/));
     const isAsset = !!(uri && uri.match(/^(assets-library|ipod-library|file|content|ms-appx|ms-appdata):/));
 
+    let aesUri = source.aesUri;
+
+    if (typeof aesUri !== 'string') {
+      aesUri = null;
+    }
+
     let nativeResizeMode;
     const RCTVideoInstance = this.getViewManagerConfig('RCTVideo');
 
@@ -278,7 +284,8 @@ export default class Video extends Component {
         type: source.type || '',
         mainVer: source.mainVer || 0,
         patchVer: source.patchVer || 0,
-        requestHeaders: source.headers ? this.stringsOnlyObject(source.headers) : {}
+        requestHeaders: source.headers ? this.stringsOnlyObject(source.headers) : {},
+        aesUri
       },
       onVideoLoadStart: this._onLoadStart,
       onVideoLoad: this._onLoad,
