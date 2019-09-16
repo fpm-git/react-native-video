@@ -50,11 +50,13 @@ import com.google.android.exoplayer2.source.TrackGroup;
 import com.google.android.exoplayer2.source.dash.DashMediaSource;
 import com.google.android.exoplayer2.source.dash.DefaultDashChunkSource;
 import com.google.android.exoplayer2.source.hls.HlsMediaSource;
+import com.google.android.exoplayer2.source.hls.playlist.HlsMasterPlaylist;
+import com.google.android.exoplayer2.source.hls.playlist.HlsPlaylist;
+import com.google.android.exoplayer2.source.hls.playlist.HlsPlaylistParserFactory;
 import com.google.android.exoplayer2.source.smoothstreaming.DefaultSsChunkSource;
 import com.google.android.exoplayer2.source.smoothstreaming.SsMediaSource;
 import com.google.android.exoplayer2.trackselection.AdaptiveTrackSelection;
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
-import com.google.android.exoplayer2.trackselection.FixedTrackSelection;
 import com.google.android.exoplayer2.trackselection.MappingTrackSelector;
 import com.google.android.exoplayer2.trackselection.TrackSelection;
 import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
@@ -62,10 +64,14 @@ import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.DefaultAllocator;
 import com.google.android.exoplayer2.upstream.BandwidthMeter;
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
-import com.google.android.exoplayer2.util.MimeTypes;
+import com.google.android.exoplayer2.upstream.ParsingLoadable;
 import com.google.android.exoplayer2.util.Util;
 import com.google.android.exoplayer2.ui.PlayerControlView;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
@@ -413,8 +419,37 @@ class ReactExoplayerView extends FrameLayout implements
                         minLoadRetryCount, DashMediaSource.DEFAULT_LIVE_PRESENTATION_DELAY_MS,
                         mainHandler, null);
             case C.TYPE_HLS:
-                return new HlsMediaSource(uri, mediaDataSourceFactory, 
-                        minLoadRetryCount, mainHandler, null);
+                return new HlsMediaSource.Factory(mediaDataSourceFactory).setPlaylistParserFactory(new HlsPlaylistParserFactory() {
+                    @Override
+                    public ParsingLoadable.Parser<HlsPlaylist> createPlaylistParser() {
+                        return new ParsingLoadable.Parser<HlsPlaylist>() {
+                            @Override
+                            public HlsPlaylist parse(Uri uri, InputStream inputStream) throws IOException {
+                                BufferedInputStream bis = new BufferedInputStream(inputStream);
+                                ByteArrayOutputStream buf = new ByteArrayOutputStream();
+                                int result = bis.read();
+                                while(result != -1) {
+                                    buf.write((byte) result);
+                                    result = bis.read();
+                                }
+
+                                String file = buf.toString();
+
+                                Log.i("ReactNativeJS", file);
+
+                                return null;
+                            }
+                        };
+                    }
+
+                    @Override
+                    public ParsingLoadable.Parser<HlsPlaylist> createPlaylistParser(HlsMasterPlaylist masterPlaylist) {
+                        return null;
+                    }
+                }).createMediaSource(uri);
+
+                /*return new HlsMediaSource(uri, mediaDataSourceFactory,
+                        minLoadRetryCount, mainHandler, null);*/
             case C.TYPE_OTHER:
                 return new ExtractorMediaSource(uri, mediaDataSourceFactory, new DefaultExtractorsFactory(),
                         mainHandler, null);
