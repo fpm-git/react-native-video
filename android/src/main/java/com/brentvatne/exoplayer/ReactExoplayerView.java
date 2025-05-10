@@ -272,6 +272,9 @@ public class ReactExoplayerView extends FrameLayout implements
 
     private CmcdConfiguration.Factory cmcdConfigurationFactory;
 
+    private ViewGroup originalParent;
+    private LayoutParams originalLayoutParams;
+
     public void setCmcdConfigurationFactory(CmcdConfiguration.Factory factory) {
         this.cmcdConfigurationFactory = factory;
     }
@@ -2276,29 +2279,39 @@ public class ReactExoplayerView extends FrameLayout implements
         View decorView = currentActivity.getWindow().getDecorView();
         ViewGroup rootView = decorView.findViewById(android.R.id.content);
 
-        LayoutParams layoutParams = new LayoutParams(
-                LayoutParams.MATCH_PARENT,
-                LayoutParams.MATCH_PARENT);
-
         if (isInPictureInPicture) {
-            ViewGroup parent = (ViewGroup)exoPlayerView.getParent();
-            if (parent != null) {
-                parent.removeView(exoPlayerView);
+            // Store original parent and layout params
+            originalParent = (ViewGroup)exoPlayerView.getParent();
+            originalLayoutParams = (LayoutParams)exoPlayerView.getLayoutParams();
+            
+            if (originalParent != null) {
+                originalParent.removeView(exoPlayerView);
             }
+            
             for (int i = 0; i < rootView.getChildCount(); i++) {
                 if (rootView.getChildAt(i) != exoPlayerView) {
                     rootViewChildrenOriginalVisibility.add(rootView.getChildAt(i).getVisibility());
                     rootView.getChildAt(i).setVisibility(View.GONE);
                 }
             }
-            rootView.addView(exoPlayerView, layoutParams);
+
+            LayoutParams pipParams = new LayoutParams(
+                    LayoutParams.MATCH_PARENT,
+                    LayoutParams.MATCH_PARENT);
+            rootView.addView(exoPlayerView, pipParams);
         } else {
             rootView.removeView(exoPlayerView);
             if (!rootViewChildrenOriginalVisibility.isEmpty()) {
                 for (int i = 0; i < rootView.getChildCount(); i++) {
                     rootView.getChildAt(i).setVisibility(rootViewChildrenOriginalVisibility.get(i));
                 }
-                addView(exoPlayerView, 0, layoutParams);
+                
+                // Restore original parent and layout params
+                if (originalParent != null) {
+                    originalParent.addView(exoPlayerView, originalLayoutParams);
+                    // Force layout update
+                    reLayoutControls();
+                }
             }
         }
     }
