@@ -401,12 +401,15 @@ class RCTVideo: UIView, RCTVideoPlayerViewControllerDelegate, RCTPlayerObserverH
 
     @objc
     func audioRouteChanged(notification: NSNotification!) {
-        if let userInfo = notification.userInfo {
-            let reason: AVAudioSession.RouteChangeReason! = userInfo[AVAudioSessionRouteChangeReasonKey] as? AVAudioSession.RouteChangeReason
-            //            let previousRoute:NSNumber! = userInfo[AVAudioSessionRouteChangePreviousRouteKey] as? NSNumber
-            if reason == .oldDeviceUnavailable, let onVideoAudioBecomingNoisy {
-                onVideoAudioBecomingNoisy(["target": reactTag as Any])
-            }
+        guard let userInfo = notification.userInfo,
+              let reasonValue = userInfo[AVAudioSessionRouteChangeReasonKey] as? UInt,
+              // let previousRouteValue: UInt = userInfo[AVAudioSessionRouteChangePreviousRouteKey] as? UInt
+              let reason = AVAudioSession.RouteChangeReason(rawValue: reasonValue) else {
+            return
+        }
+
+        if reason == .oldDeviceUnavailable, let onVideoAudioBecomingNoisy {
+            onVideoAudioBecomingNoisy(["target": reactTag as Any])
         }
     }
 
