@@ -2,19 +2,15 @@
   "compilerOptions": {
     "rootDir": "./src",
     "outDir": "lib",
-    "paths": {
-      "react-native-video": ["./src/index"]
-    },
-    "composite": true,
     "declaration": true,
-    "sourceMap": true,
-    "allowUnreachableCode": false,
-    "allowUnusedLabels": false,
+    "emitDeclarationOnly": true,
+    "declarationMap": false,
+    "outFile": "lib/react-native-video.d.ts",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "jsx": "react",
     "lib": ["esnext"],
-    "module": "CommonJS",
+    "module": "ESNext",
     "moduleResolution": "node",
     "noFallthroughCasesInSwitch": true,
     "noImplicitReturns": true,
